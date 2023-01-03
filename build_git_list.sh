@@ -3,7 +3,7 @@ list_directory=repository_list
 list_file_markup=repositories.md
 list_file_json=repositories.json
 
-
+# Moegliche Datenfelder in Github-CLI
 # ------------------------------- | ------------------------------- | ------------------------------- | -------------------------------
 # assignableUsers                 | codeOfConduct                   | contactLinks                    | createdAt
 # defaultBranchRef                | deleteBranchOnMerge             | description                     | diskUsage
@@ -23,8 +23,11 @@ list_file_json=repositories.json
 # viewerPossibleCommitEmails      | viewerSubscription              | watchers                        |
 # ------------------------------- | ------------------------------- | ------------------------------- | -------------------------------
 
-gh repo list --json name,isPrivate -L 200 > ${list_directory}/${list_file_json}
-repository_name_length=0
+github_data="name,isPrivate,isArchived,repositoryTopics,description"
+
+gh repo list --json ${github_data} -L 200 > ${list_directory}/${list_file_json}
+repository_name_length=10
+repository_label_length=10
 
 for repository in $(cat ${list_directory}/${list_file_json} | jq '.[].name')
 do
@@ -32,6 +35,15 @@ do
 	if [ ${repository_name_length} -le ${#repository} ]
 	then
 		repository_name_length=${#repository}
+	fi
+done
+
+for repository in $(cat ${list_directory}/${list_file_json} | jq -rM ".[] | select(.repositoryTopics!=null).repositoryTopics|map(.name)|join(\",,\")")
+do
+	# echo "${repository} ... ${#repository}/${repository_label_length}"
+	if [ ${repository_label_length} -le ${#repository} ]
+	then
+		repository_label_length=${#repository}
 	fi
 done
 
@@ -45,22 +57,38 @@ fi
 
 if [ ! -f ${list_directory}/${list_file_markup} ]
 then
-	printf "%-${repository_name_length}s | %-10s | %-20s \n" "Repository" "Modus" "Beschreibung" >> ${list_directory}/${list_file_markup}
-	printf "%-${repository_name_length}s | %-10s | %-20s \n" "---" "---" "---" >> ${list_directory}/${list_file_markup}
+	printf "%-${repository_name_length}s | %-8s | %-8s | %-${repository_label_length}s | %s \n" "Repository" "Modus" "Status" "Labels" "Beschreibung" >> ${list_directory}/${list_file_markup}
+	printf "%-${repository_name_length}s | %-8s | %-8s | %-${repository_label_length}s | %s \n" "---" "---" "---" "---" "---" >> ${list_directory}/${list_file_markup}
 fi
 
-for repository in $(cat ${list_directory}/${list_file_json} | jq -r '.[].name')
+for repository in $(cat ${list_directory}/${list_file_json} | jq -rM '.[].name')
 do
 	if grep -q "^${repository} *|" ${list_directory}/${list_file_markup}
 	then
 		echo "${repository} ist in ${list_directory}/${list_file_markup}"
 	else
-		if $(cat ${list_directory}/${list_file_json} | jq -r ".[]|select(.name==\"${repository}\").isPrivate")
+		repository_json="$(cat ${list_directory}/${list_file_json} | jq -rM ".[]|select(.name==\"${repository}\")")"
+
+		repository_description="$(echo "${repository_json}" | jq -rM ".description")"
+		if [ "$(echo "${repository_json}" | jq -rM ".repositoryTopics")" != "null" ]
+		then
+			repository_labels=$(echo "${repository_json}" | jq -rM '.repositoryTopics|map(.name)|join(", ")')
+		else
+			repository_labels=""
+		fi
+		if $(echo "${repository_json}" | jq -rM ".isPrivate")
 		then
 			repository_mode="Private"
 		else
 			repository_mode="Public"
 		fi
-		printf "%-${repository_name_length}s | %-10s | \n" "${repository}" "${repository_mode}" >> ${list_directory}/${list_file_markup}
+		if $(echo "${repository_json}" | jq -rM ".isArchived")
+		then
+			repository_state="Archived"
+		else
+			repository_state="Open"
+		fi
+
+		printf "%-${repository_name_length}s | %-8s | %-8s | %-${repository_label_length}s | %s\n" "${repository}" "${repository_mode}" "${repository_state}" "${repository_labels}" "${repository_description}" >> ${list_directory}/${list_file_markup}
 	fi
 done
