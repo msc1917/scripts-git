@@ -23,7 +23,7 @@ list_file_json=repositories.json
 # viewerPossibleCommitEmails      | viewerSubscription              | watchers                        |
 # ------------------------------- | ------------------------------- | ------------------------------- | -------------------------------
 
-github_data="name,isPrivate,isArchived,repositoryTopics,description"
+github_data="name,isPrivate,isArchived,repositoryTopics,description,hasIssuesEnabled,hasProjectsEnabled,hasWikiEnabled"
 
 gh repo list --json ${github_data} -L 200 > ${list_directory}/${list_file_json}
 repository_name_length=10
@@ -57,8 +57,8 @@ fi
 
 if [ ! -f ${list_directory}/${list_file_markup} ]
 then
-	printf "%-${repository_name_length}s | %-8s | %-8s | %-${repository_label_length}s | %s \n" "Repository" "Modus" "Status" "Labels" "Beschreibung" >> ${list_directory}/${list_file_markup}
-	printf "%-${repository_name_length}s | %-8s | %-8s | %-${repository_label_length}s | %s \n" "---" "---" "---" "---" "---" >> ${list_directory}/${list_file_markup}
+	printf "%-${repository_name_length}s | %-8s | %-8s | %-8s | %-8s | %-8s | %-${repository_label_length}s | %s \n" "Repository" "Modus" "Issue" "Project" "Wiki" "Status" "Labels" "Beschreibung" >> ${list_directory}/${list_file_markup}
+	printf "%-${repository_name_length}s | %-8s | %-8s | %-8s | %-8s | %-8s | %-${repository_label_length}s | %s \n" "---" "---" "---" "---" "---" "---" "---" "---" >> ${list_directory}/${list_file_markup}
 fi
 
 for repository in $(cat ${list_directory}/${list_file_json} | jq -rM '.[].name')
@@ -88,7 +88,25 @@ do
 		else
 			repository_state="Open"
 		fi
+		if $(echo "${repository_json}" | jq -rM ".hasIssuesEnabled")
+		then
+			github_issues_state="Yes"
+		else
+			github_issues_state="No"
+		fi
+		if $(echo "${repository_json}" | jq -rM ".hasProjectsEnabled")
+		then
+			github_project_state="Yes"
+		else
+			github_project_state="No"
+		fi
+		if $(echo "${repository_json}" | jq -rM ".hasWikiEnabled")
+		then
+			github_wiki_state="Yes"
+		else
+			github_wiki_state="No"
+		fi
 
-		printf "%-${repository_name_length}s | %-8s | %-8s | %-${repository_label_length}s | %s\n" "${repository}" "${repository_mode}" "${repository_state}" "${repository_labels}" "${repository_description}" >> ${list_directory}/${list_file_markup}
+		printf "%-${repository_name_length}s | %-8s | %-8s | %-8s | %-8s | %-8s | %-${repository_label_length}s | %s\n" "${repository}" "${repository_mode}" "${github_issues_state}" "${github_project_state}" "${github_wiki_state}" "${repository_state}" "${repository_labels}" "${repository_description}" >> ${list_directory}/${list_file_markup}
 	fi
 done
