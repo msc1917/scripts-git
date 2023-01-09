@@ -3,9 +3,42 @@
 directories="script development"
 homedir=~
 
+
+check_git_repository()
+{
+	directory="${1}"
+	old_dir="$(pwd)"
+	if [ -d "${directory}" ]
+	then
+		cd $(dirname "${directory}") >/dev/null 2>/dev/null
+		git_status="$(git status -v)"
+		# On branch main
+		git_local_branch="$(echo "${git_status}" | grep "^On branch [^ ][^ ]*$" | sed "s/On branch //")"
+
+		# Your branch is up to date with 'origin/main'.
+		echo "${git_status}" | grep "^Your branch is up to date with [^ ][^ ]*$"
+
+# nothing to commit, working tree clean
+
+
+
+# 	On branch main
+# Your branch is up to date with 'origin/main'.
+
+# Changes not staged for commit:
+#   (use "git add <file>..." to update what will be committed)
+#   (use "git restore <file>..." to discard changes in working directory)
+#         modified:   tasks/main.yml
+
+# Untracked files:
+#   (use "git add <file>..." to include in what will be committed)
+
+}
+
 check_git_dir()
 {
 	directory="${1}"
+	old_dir="$(pwd)"
 	if [ -d "${directory}" ]
 	then
 		cd $(dirname "${directory}") >/dev/null 2>/dev/null
@@ -17,13 +50,15 @@ check_git_dir()
 			do
 				if [ -f "${directory}/${submodule_directory}/.git" ]
 				then
+					cd ${directory}/${submodule_directory} >/dev/null 2>/dev/null
 					echo "git_submodule:${directory}/${submodule_directory}"
+					git status -s
 					#check_git_dir "$(dirname "${directory}")/${submodule_directory}"
 				fi
 			done
 		fi
 
-		cd - >/dev/null 2>/dev/null
+		cd ${old_dir} >/dev/null 2>/dev/null
 	fi
 }
 
