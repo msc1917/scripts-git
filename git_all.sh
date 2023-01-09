@@ -4,7 +4,7 @@ directories="script development"
 homedir=~
 
 
-check_git_repository()
+parse_git_repository_status()
 {
 	local directory="${1}"
 	local old_dir="$(pwd)"
@@ -12,9 +12,25 @@ check_git_repository()
 	then
 		cd "${directory}" >/dev/null 2>/dev/null
 		git_status="$(git status -v)"
-		# On branch main
-		git_local_branch="$(echo "${git_status}" | grep "^On branch [^ ][^ ]*$" | sed "s/On branch //")"
 
+
+		# -----------
+		# Local Repository Status
+		# -----------
+		# On branch main
+		if echo "${git_status}" | grep -q "^On branch [^ ][^ ]*$"
+		then
+			git_local_branch="$(echo "${git_status}" | grep "^On branch [^ ][^ ]*$" | sed "s/On branch //")"
+		elif echo "${git_status}" | grep -q "^HEAD detached at [0-9a-f][0-9a-f]*"
+		then
+			git_local_branch="[DETACHED_HEAD]"
+		else
+			git_local_branch="[ERROR]"
+		fi
+
+		# -----------
+		# Remote Repository Status
+		# -----------
 		local remote_repository_status=""
 		# Your branch is up to date with 'origin/main'.
 		if echo "${git_status}" | grep -q "^Your branch is up to date with '[^'][^']*'.$"
@@ -23,7 +39,7 @@ check_git_repository()
 			do
 				remote_repository_status="${remote_repository_status}${LINE}\n"
 			done
-			fi
+		fi
 		# Your branch is ahead of 'origin/main' by 2 commits.
 		if echo "${git_status}" | grep -q "^Your branch is behind of  '[^'][^']*' by [0-9]*[1-9] commits?.$"
 		then
@@ -31,7 +47,7 @@ check_git_repository()
 			do
 				remote_repository_status="${remote_repository_status}${LINE}\n"
 			done
-				fi
+		fi
 		# Your branch is behind of 'origin/main' by 2 commits.
 		if echo "${git_status}" | grep -q "^Your branch is ahead of  '[^'][^']*' by [0-9]*[1-9] commits?.$"
 		then
@@ -39,7 +55,7 @@ check_git_repository()
 	        do
 				remote_repository_status="${remote_repository_status}${LINE}\n"
 			done
-				fi
+		fi
 		local remote_repository_status_output=""
 		if [ "${remote_repository_status}" = "" ]
 		then
@@ -50,8 +66,11 @@ check_git_repository()
 				remote_repository_status_output="${remote_repository_status_output}${LINE},"
 			done
 			remote_repository_status_output="$(echo "${remote_repository_status_output}" | sed "s/,$//")"
-		done
+		fi
 
+		# -----------
+		# Repository Status
+		# -----------
 		local repository_status=""
 		# nothing to commit, working tree clean
 		if echo "${git_status}" | grep -q "^nothing to commit, working tree clean$"
@@ -61,20 +80,23 @@ check_git_repository()
 			# Changes not staged for commit:
 			if echo "${git_status}" | grep -q "^Changes not staged for commit:$"
 			then
+				repository_status="${repository_status}unstaged_files,"
 			fi
 			# Untracked files:
 			if echo "${git_status}" | grep -q "^Untracked files:$"
 			then
+				repository_status="${repository_status}untracked_files,"
 			fi
+			repository_status="$(echo "${repository_status}" | sed "s/,$//")"
 		fi
 
 
-	echo "${git_local_branch}:${remote_repository_status_output}"
+	echo "${git_local_branch}:${repository_status}:${remote_repository_status_output}"
 	fi
 	cd ${old_dir} >/dev/null 2>/dev/null
 }
 
-check_git_dir()
+parse_git_repository()
 {
 	local directory="${1}"
 	local old_dir="$(pwd)"
@@ -82,7 +104,7 @@ check_git_dir()
 	then
 		cd $(dirname "${directory}") >/dev/null 2>/dev/null
 		directory="$(git rev-parse --show-toplevel)"
-		echo "git_repository:${directory}"
+		echo "git_repository:${directory}:$(parse_git_repository_status ${directory})"
 		if [ -f ${directory}/.gitmodules ]
 		then
 			for submodule_directory in $(cat ${directory}/.gitmodules | grep " *path = " | cut -f 2 -d "=")
@@ -90,9 +112,7 @@ check_git_dir()
 				if [ -f "${directory}/${submodule_directory}/.git" ]
 				then
 					cd ${directory}/${submodule_directory} >/dev/null 2>/dev/null
-					echo "git_submodule:${directory}/${submodule_directory}"
-					check_git_repository ${directory}/${submodule_directory}
-					#check_git_dir "$(dirname "${directory}")/${submodule_directory}"
+					echo "git_submodule:${directory}/${submodule_directory}:$(parse_git_repository_status ${directory}/${submodule_directory})"
 				fi
 			done
 		fi
@@ -114,7 +134,7 @@ if [ "${search_path}" != "" ]
 then
 	for directory in $(find ${search_path} -type d -name .git | sort)
 	do
-		check_git_dir ${directory}
+		parse_git_repository ${directory}
 	done
 else
 	echo "Kein Verzeichnis vorhanden (Gesucht wurde in$(echo " ${directories}" | sed "s/ / ~\//g"))."
