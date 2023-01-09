@@ -6,39 +6,78 @@ homedir=~
 
 check_git_repository()
 {
-	directory="${1}"
-	old_dir="$(pwd)"
+	local directory="${1}"
+	local old_dir="$(pwd)"
 	if [ -d "${directory}" ]
 	then
-		cd $(dirname "${directory}") >/dev/null 2>/dev/null
+		cd "${directory}" >/dev/null 2>/dev/null
 		git_status="$(git status -v)"
 		# On branch main
 		git_local_branch="$(echo "${git_status}" | grep "^On branch [^ ][^ ]*$" | sed "s/On branch //")"
 
+		local remote_repository_status=""
 		# Your branch is up to date with 'origin/main'.
-		echo "${git_status}" | grep "^Your branch is up to date with [^ ][^ ]*$"
+		if echo "${git_status}" | grep -q "^Your branch is up to date with '[^'][^']*'.$"
+		then
+			for LINE in $(echo "${git_status}" | grep "^Your branch is up to date with '[^'][^']*'.$" | sed "s/^Your branch is up to date with '\([^'][^']*\)'.$/\1\[sync]/")
+			do
+				remote_repository_status="${remote_repository_status}${LINE}\n"
+			done
+			fi
+		# Your branch is ahead of 'origin/main' by 2 commits.
+		if echo "${git_status}" | grep -q "^Your branch is behind of  '[^'][^']*' by [0-9]*[1-9] commits?.$"
+		then
+			for LINE in "$(echo "${git_status}" | grep "^Your branch is behind of  '[^'][^']*' by [0-9]*[1-9] commits?.$" | sed "s/^Your branch is behind of  '\([^'][^']*\)' by \([0-9]*[1-9]\) commits?.$/\1[+\2]/")"
+			do
+				remote_repository_status="${remote_repository_status}${LINE}\n"
+			done
+				fi
+		# Your branch is behind of 'origin/main' by 2 commits.
+		if echo "${git_status}" | grep -q "^Your branch is ahead of  '[^'][^']*' by [0-9]*[1-9] commits?.$"
+		then
+			for LINE in "$(echo "${git_status}" | grep "^Your branch is ahead of  '[^'][^']*' by [0-9]*[1-9] commits?.$" | sed "s/^Your branch is ahead of  '\([^'][^']*\)' by \([0-9]*[1-9]\) commits?.$/\1[-\2]/")"
+	        do
+				remote_repository_status="${remote_repository_status}${LINE}\n"
+			done
+				fi
+		local remote_repository_status_output=""
+		if [ "${remote_repository_status}" = "" ]
+		then
+			remote_repository_status_output="no_remote_repository"
+		else
+			for LINE in $(echo "${remote_repository_status}" | sort)
+			do
+				remote_repository_status_output="${remote_repository_status_output}${LINE},"
+			done
+			remote_repository_status_output="$(echo "${remote_repository_status_output}" | sed "s/,$//")"
+		done
 
-# nothing to commit, working tree clean
+		local repository_status=""
+		# nothing to commit, working tree clean
+		if echo "${git_status}" | grep -q "^nothing to commit, working tree clean$"
+		then
+			repository_status="clean"
+		else
+			# Changes not staged for commit:
+			if echo "${git_status}" | grep -q "^Changes not staged for commit:$"
+			then
+			fi
+			# Untracked files:
+			if echo "${git_status}" | grep -q "^Untracked files:$"
+			then
+			fi
+		fi
 
 
-
-# 	On branch main
-# Your branch is up to date with 'origin/main'.
-
-# Changes not staged for commit:
-#   (use "git add <file>..." to update what will be committed)
-#   (use "git restore <file>..." to discard changes in working directory)
-#         modified:   tasks/main.yml
-
-# Untracked files:
-#   (use "git add <file>..." to include in what will be committed)
-
+	echo "${git_local_branch}:${remote_repository_status_output}"
+	fi
+	cd ${old_dir} >/dev/null 2>/dev/null
 }
 
 check_git_dir()
 {
-	directory="${1}"
-	old_dir="$(pwd)"
+	local directory="${1}"
+	local old_dir="$(pwd)"
 	if [ -d "${directory}" ]
 	then
 		cd $(dirname "${directory}") >/dev/null 2>/dev/null
@@ -52,7 +91,7 @@ check_git_dir()
 				then
 					cd ${directory}/${submodule_directory} >/dev/null 2>/dev/null
 					echo "git_submodule:${directory}/${submodule_directory}"
-					git status -s
+					check_git_repository ${directory}/${submodule_directory}
 					#check_git_dir "$(dirname "${directory}")/${submodule_directory}"
 				fi
 			done
