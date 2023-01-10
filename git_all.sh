@@ -56,7 +56,7 @@ parse_git_repository_status()
 		# Your branch is ahead of 'origin/main' by 2 commits.
 		if echo "${git_status}" | grep -qE "^Your branch is behind of '[^'][^']*' by [0-9]*[1-9] commits?.$"
 		then 
-			for LINE in "$(echo "${git_status}" | grep -E "^Your branch is behind of '[^'][^']*' by [0-9]*[1-9] commits?.$" | sed "s/^Your branch is behind of '\([^'][^']*\)' by \([0-9]*[1-9]\) commits\?.$/\1[+\2]/")"
+			for LINE in "$(echo "${git_status}" | grep -E "^Your branch is behind of '[^'][^']*' by [0-9]*[1-9] commits?.$" | sed "s/^Your branch is behind of '\([^'][^']*\)' by \([0-9]*[1-9]\) commits\?.$/\1[-\2]/")"
 			do
 				remote_repository_status="${remote_repository_status}${LINE}\n"
 			done
@@ -64,7 +64,7 @@ parse_git_repository_status()
 		# Your branch is behind of 'origin/main' by 2 commits.
 		if echo "${git_status}" | grep -qE "^Your branch is ahead of '[^'][^']*' by [0-9]*[1-9] commits?.$"
 		then
-			for LINE in "$(echo "${git_status}" | grep -E "^Your branch is ahead of '[^'][^']*' by [0-9]*[1-9] commits?.$" | sed "s/^Your branch is ahead of '\([^'][^']*\)' by \([0-9]*[1-9]\) commits\?.$/\1[-\2]/")"
+			for LINE in "$(echo "${git_status}" | grep -E "^Your branch is ahead of '[^'][^']*' by [0-9]*[1-9] commits?.$" | sed "s/^Your branch is ahead of '\([^'][^']*\)' by \([0-9]*[1-9]\) commits\?.$/\1[+\2]/")"
 	        do
 				remote_repository_status="${remote_repository_status}${LINE}\n"
 			done
