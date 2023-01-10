@@ -54,17 +54,17 @@ parse_git_repository_status()
 			done
 		fi
 		# Your branch is ahead of 'origin/main' by 2 commits.
-		if echo "${git_status}" | grep -q "^Your branch is behind of  '[^'][^']*' by [0-9]*[1-9] commits?.$"
-		then
-			for LINE in "$(echo "${git_status}" | grep "^Your branch is behind of  '[^'][^']*' by [0-9]*[1-9] commits?.$" | sed "s/^Your branch is behind of  '\([^'][^']*\)' by \([0-9]*[1-9]\) commits?.$/\1[+\2]/")"
+		if echo "${git_status}" | grep -qE "^Your branch is behind of '[^'][^']*' by [0-9]*[1-9] commits?.$"
+		then 
+			for LINE in "$(echo "${git_status}" | grep -E "^Your branch is behind of '[^'][^']*' by [0-9]*[1-9] commits?.$" | sed "s/^Your branch is behind of '\([^'][^']*\)' by \([0-9]*[1-9]\) commits\?.$/\1[+\2]/")"
 			do
 				remote_repository_status="${remote_repository_status}${LINE}\n"
 			done
 		fi
 		# Your branch is behind of 'origin/main' by 2 commits.
-		if echo "${git_status}" | grep -q "^Your branch is ahead of  '[^'][^']*' by [0-9]*[1-9] commits?.$"
+		if echo "${git_status}" | grep -qE "^Your branch is ahead of '[^'][^']*' by [0-9]*[1-9] commits?.$"
 		then
-			for LINE in "$(echo "${git_status}" | grep "^Your branch is ahead of  '[^'][^']*' by [0-9]*[1-9] commits?.$" | sed "s/^Your branch is ahead of  '\([^'][^']*\)' by \([0-9]*[1-9]\) commits?.$/\1[-\2]/")"
+			for LINE in "$(echo "${git_status}" | grep -E "^Your branch is ahead of '[^'][^']*' by [0-9]*[1-9] commits?.$" | sed "s/^Your branch is ahead of '\([^'][^']*\)' by \([0-9]*[1-9]\) commits\?.$/\1[-\2]/")"
 	        do
 				remote_repository_status="${remote_repository_status}${LINE}\n"
 			done
@@ -155,7 +155,6 @@ render_git_repository()
 		local local_branch="$(echo "${LINE}" | cut -f 3 -d ":")"
 		local repository_status="$(echo "${LINE}" | cut -f 4 -d ":")"
 		local remote_branch="$(echo "${LINE}" | cut -f 5 -d ":")"
-		# local sync_status="$(echo "${LINE}" | cut -f 6 -d ":")"
 
 		if [ "${type}" = "git_repository" ]
 		then
@@ -183,13 +182,6 @@ render_git_repository()
 		then
 			length_remote_branch=${#remote_branch}
 		fi
-
-		# if [ ${length_sync_status} -lt ${#sync_status} ]
-		# then
-		# 	length_sync_status=${#sync_status}
-		# fi
-
-        # echo "${directory}[${length_directory}]:${local_branch}[${length_local_branch}]:${repository_status}[${length_repository_status}]:${remote_branch}[${length_remote_branch}]:${sync_status}[${length_sync_status}]"
 	done
 
 	printf "%-${length_directory}s %-${length_local_branch}s %-${length_repository_status}s %-${length_remote_branch}s\n" "${headline_directory}" "${headline_local_branch}" "${headline_repository_status}" "${headline_remote_branch}"
