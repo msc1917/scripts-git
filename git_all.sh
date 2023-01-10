@@ -1,8 +1,21 @@
 #! /bin/sh
 
-directories="script development"
+directories="script development lib"
 homedir=~
 
+draw_chars()
+{
+	local char=""
+	local char_start=0
+	local char_length=${1}
+	local char_type=${2:--}
+	until [ ${char_start} -eq ${char_length} ]
+	do
+		char="${char}${char_type}"
+		char_start=$(expr ${char_start} + 1 )
+	done
+	printf "%s" "${char}"
+}
 
 parse_git_repository_status()
 {
@@ -121,6 +134,91 @@ parse_git_repository()
 	fi
 }
 
+render_git_repository()
+{
+	local git_repository_list="$(echo "${1}" | grep -E "^(git_repository|git_submodule):[^:][^:]*:[^:][^:]*:[^:][^:]*:[^:][^:]*$")"
+	local headline_directory="Verzeichnis"
+	local headline_local_branch="Branch"
+	local headline_repository_status="Status"
+	local headline_remote_branch="Remote"
+
+	local length_directory=${#headline_directory}
+	local length_local_branch=${#headline_local_branch}
+	local length_repository_status=${#headline_repository_status}
+	local length_remote_branch=${#headline_remote_branch}
+	# local length_sync_status=0
+	local submodule_marker="  ==> "
+	for LINE in ${git_repository_list}
+	do
+		local type="$(echo "${LINE}" | cut -f 1 -d ":")"
+		local directory="$(echo "${LINE}" | cut -f 2 -d ":")"
+		local local_branch="$(echo "${LINE}" | cut -f 3 -d ":")"
+		local repository_status="$(echo "${LINE}" | cut -f 4 -d ":")"
+		local remote_branch="$(echo "${LINE}" | cut -f 5 -d ":")"
+		# local sync_status="$(echo "${LINE}" | cut -f 6 -d ":")"
+
+		if [ "${type}" = "git_repository" ]
+		then
+			length_this_directory=${#directory}
+		else
+			length_this_directory=$(expr ${#directory} + ${#submodule_marker})
+		fi
+
+		if [ ${length_directory} -lt ${length_this_directory} ]
+		then
+			length_directory=${length_this_directory}
+		fi
+
+		if [ ${length_local_branch} -lt ${#local_branch} ]
+		then
+			length_local_branch=${#local_branch}
+		fi
+
+		if [ ${length_repository_status} -lt ${#repository_status} ]
+		then
+			length_repository_status=${#repository_status}
+		fi
+
+		if [ ${length_remote_branch} -lt ${#remote_branch} ]
+		then
+			length_remote_branch=${#remote_branch}
+		fi
+
+		# if [ ${length_sync_status} -lt ${#sync_status} ]
+		# then
+		# 	length_sync_status=${#sync_status}
+		# fi
+
+        # echo "${directory}[${length_directory}]:${local_branch}[${length_local_branch}]:${repository_status}[${length_repository_status}]:${remote_branch}[${length_remote_branch}]:${sync_status}[${length_sync_status}]"
+	done
+
+	printf "%-${length_directory}s %-${length_local_branch}s %-${length_repository_status}s %-${length_remote_branch}s\n" "${headline_directory}" "${headline_local_branch}" "${headline_repository_status}" "${headline_remote_branch}"
+	printf "%-${length_directory}s %-${length_local_branch}s %-${length_repository_status}s %-${length_remote_branch}s\n" "$(draw_chars ${length_directory})" "$(draw_chars ${length_local_branch})" "$(draw_chars ${length_repository_status})" "$(draw_chars ${length_remote_branch})"
+
+	echo "${git_repository_list}" | grep "^git_repository" | sort | while read LINE
+	do
+		local type="$(echo "${LINE}" | cut -f 1 -d ":")"
+		local directory="$(echo "${LINE}" | cut -f 2 -d ":")"
+		local local_branch="$(echo "${LINE}" | cut -f 3 -d ":")"
+		local repository_status="$(echo "${LINE}" | cut -f 4 -d ":")"
+		local remote_branch="$(echo "${LINE}" | cut -f 5 -d ":")"
+		printf "%-${length_directory}s %-${length_local_branch}s %-${length_repository_status}s %-${length_remote_branch}s\n" "${directory}" "${local_branch}" "${repository_status}" "${remote_branch}"
+		if echo "${git_repository_list}" | grep -q "^git_submodule:${directory}"
+		then
+			echo "${git_repository_list}" | grep "^git_submodule:${directory}" | sort | while read submodule_line
+			do
+				local type="$(echo "${submodule_line}" | cut -f 1 -d ":")"
+				local directory="$(echo "${submodule_line}" | cut -f 2 -d ":")"
+				local local_branch="$(echo "${submodule_line}" | cut -f 3 -d ":")"
+				local repository_status="$(echo "${submodule_line}" | cut -f 4 -d ":")"
+				local remote_branch="$(echo "${submodule_line}" | cut -f 5 -d ":")"
+				printf "%-${length_directory}s %-${length_local_branch}s %-${length_repository_status}s %-${length_remote_branch}s\n" "${submodule_marker}${directory}" "${local_branch}" "${repository_status}" "${remote_branch}"
+			done
+		fi
+	done
+}
+
+
 search_path=""
 for directory in ${directories}
 do
@@ -132,10 +230,13 @@ done
 
 if [ "${search_path}" != "" ]
 then
+	git_repository_list=""
 	for directory in $(find ${search_path} -type d -name .git | sort)
 	do
-		parse_git_repository ${directory}
+		git_repository_list="${git_repository_list}\n$(parse_git_repository ${directory})"
 	done
+
+	render_git_repository "${git_repository_list}"
 else
 	echo "Kein Verzeichnis vorhanden (Gesucht wurde in$(echo " ${directories}" | sed "s/ / ~\//g"))."
 	exit 1
