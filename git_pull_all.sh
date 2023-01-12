@@ -1,12 +1,26 @@
 #! /bin/sh
 
+### Loader fuer base-libraries
 homedir=~
-
+base_configuration_directory=~/etc/base_configuration
+if [ -d ${base_configuration_directory} ]
+then
+	. ${base_configuration_directory}/base_presets.sh
+	. ${base_configuration_directory}/git_presets.sh
+else
 . ./base_functions.sh
 . ./presets.sh
+fi
+
+for library_file in git_library.sh visuals_library.sh
+do
+	. ${default_functions_dir}/${library_file}
+	done
+###
+
 
 search_path=""
-for directory in ${directories}
+for directory in ${git_repository_base_directories}
 do
 	if [ -d ~/${directory} ]
 	then
@@ -34,6 +48,6 @@ then
 	done
 
 else
-	echo "Kein Verzeichnis vorhanden (Gesucht wurde in$(echo " ${directories}" | sed "s/ / ~\//g"))."
+	echo "Kein Verzeichnis vorhanden (Gesucht wurde in$(echo " ${git_repository_base_directories}" | sed "s/ / ~\//g"))."
 	exit 1
 fi

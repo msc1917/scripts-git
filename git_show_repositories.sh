@@ -6,7 +6,7 @@ homedir=~
 . ./presets.sh
 
 search_path=""
-for directory in ${directories}
+for directory in ${git_repository_base_directories}
 do
 	if [ -d ~/${directory} ]
 	then
@@ -24,6 +24,6 @@ then
 
 	render_git_repository "${git_repository_list}"
 else
-	echo "Kein Verzeichnis vorhanden (Gesucht wurde in$(echo " ${directories}" | sed "s/ / ~\//g"))."
+	echo "Kein Verzeichnis vorhanden (Gesucht wurde in$(echo " ${git_repository_base_directories}" | sed "s/ / ~\//g"))."
 	exit 1
 fi
