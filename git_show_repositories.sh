@@ -1,9 +1,22 @@
 #! /bin/sh
 
+### Loader fuer base-libraries
 homedir=~
-
+base_configuration_directory=~/etc/base_configuration
+if [ -d ${base_configuration_directory} ]
+then
+	. ${base_configuration_directory}/base_presets.sh
+	. ${base_configuration_directory}/git_presets.sh
+else
 . ./base_functions.sh
 . ./presets.sh
+fi
+
+for library_file in git_library.sh visuals_library.sh
+do
+	. ${default_functions_dir}/${library_file}
+	done
+###
 
 search_path=""
 for directory in ${git_repository_base_directories}
