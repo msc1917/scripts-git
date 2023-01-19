@@ -15,8 +15,8 @@ ls ${module_directory} | while read directory;
 do
 	if [ -d ${module_directory}/${directory} -a -f ${module_directory}/${directory}/.git ]
 	then
-		cd ${module_directory}/${directory}
-		result=$(git status)
+		# cd ${module_directory}/${directory}
+		result=$(git -C ${module_directory}/${directory} status)
 		if echo ${result} | grep -q "HEAD detached at"
 		then
 			git_detached=1
@@ -33,7 +33,7 @@ do
 		if [ ${git_detached} -eq 1 -a ${git_clean} -eq 1 ]
 		then
 			printf "%${directory_length}s: %1s\n" "${module_directory}/${directory}" "Detached head and clean repository: fixing..."
-			git checkout main
+			git -C ${module_directory}/${directory} checkout main
 		elif [ ${git_detached} -eq 1 -a ${git_clean} -eq 0 ]
 		then
 			printf "%${directory_length}s: %1s\n" "${module_directory}/${directory}" "Detached head but no clean repository: manual fix needed..."
@@ -41,7 +41,7 @@ do
 			printf "%${directory_length}s: %1s\n" "${module_directory}/${directory}" "Clean Git repository, nothing to do..."
 		fi
 
-		cd - >/dev/null
+		# cd - >/dev/null
 	else
 		printf "%${directory_length}s: %1s\n" "${module_directory}/${directory}" "No GIT-Repository"
 	fi
