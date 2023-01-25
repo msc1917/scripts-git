@@ -1,5 +1,4 @@
 #! /bin/sh
-#! /bin/sh
 
 ### Loader fuer base-libraries
 homedir=~
