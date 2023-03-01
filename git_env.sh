@@ -58,7 +58,7 @@ ignore=true
 				if [ ! -d "${target_path}" ]
 				then
 					echo "  ==> ${github_address}${git_branch} -> ${target_path} (Klone Repository)"
-					git clone ${github_address}${git_branch} ${target_path}
+					git clone ${github_address}${git_branch} $(echo "${target_path}" | sed "s#^~#${HOME}#")
 				else
 					echo "  ==> ${github_address}${git_branch} -> ${target_path} (Repository bereits Vorhanden)"
 				fi
