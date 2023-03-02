@@ -12,13 +12,22 @@ else
 . ./presets.sh
 fi
 
+git_settings_repo="git@github.com:msc1917/settings_git_repo.git"
+
 for library_file in git_library.sh visuals_library.sh
 do
 	. ${default_functions_dir}/${library_file}
 	done
 ###
 
-
+if [ ! -d ${default_config_dir}/git_list.d ]
+then
+	echo "Getting settings from Github (${git_settings_repo})"
+	git clone ${git_settings_repo} ${default_config_dir}/git_list.d
+else
+	echo "Aktialize settings from Github (${git_settings_repo})"
+	git -C ${default_config_dir}/git_list.d pull
+fi
 
 # find ${default_config_dir}/git_list.d/ -type f -name *.list | while read filename;
 for filename in $(find ${default_config_dir}/git_list.d/ -type f -name *.list)
