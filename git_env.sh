@@ -13,6 +13,7 @@ else
 fi
 
 git_settings_repo="git@github.com:msc1917/settings_git_repo.git"
+my_git_repos="github.com:msc1917"
 
 for library_file in git_library.sh visuals_library.sh
 do
@@ -91,7 +92,12 @@ ignore=true
 					if [ -d $(echo "${target_path}" | sed "s#^~#${HOME}#") ]
 					then
 						echo "  ==> ${github_address}${git_branch} -> ${target_path} (Pull Repository)"
-						git -C $(echo "${target_path}" | sed "s#^~#${HOME}#") push 2>&1 | intend
+						if echo "${my_git_repos}" | grep -q "$(echo ${github_address} | sed "s#^[^@][^@]*@\([^/][^/]*\)/.*#\1#")"
+						then
+							git -C $(echo "${target_path}" | sed "s#^~#${HOME}#") push 2>&1 | intend
+						else
+							echo "No automatic push from ${github_address}..." | intend
+						fi
 						git -C $(echo "${target_path}" | sed "s#^~#${HOME}#") pull 2>&1 | intend
 					else
 						echo "  ==> ${github_address}${git_branch} -> ${target_path} (Klone Repository)"
