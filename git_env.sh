@@ -20,13 +20,22 @@ do
 	done
 ###
 
+intend()
+{
+	while read LINE;
+	do
+		echo "      ${LINE}"
+	done
+}
+
+echo "\nPreparing..."
 if [ ! -d ${default_config_dir}/git_list.d ]
 then
-	echo "Getting settings from Github (${git_settings_repo})"
-	git clone ${git_settings_repo} ${default_config_dir}/git_list.d
+	echo "  ==> Getting settings from Github (${git_settings_repo})"
+	git clone ${git_settings_repo} ${default_config_dir}/git_list.d 2>&1 | intend
 else
-	echo "Aktialize settings from Github (${git_settings_repo})"
-	git -C ${default_config_dir}/git_list.d pull
+	echo "  ==> Aktialize settings from Github (${git_settings_repo})"
+	git -C ${default_config_dir}/git_list.d pull 2>&1 | intend
 fi
 
 # find ${default_config_dir}/git_list.d/ -type f -name *.list | while read filename;
@@ -43,14 +52,14 @@ ignore=true
 				if echo "${git_category}" |grep -q ${1}
 				then
 					ignore=false
-					echo "Kathegorie: \"${git_category}\""
+					echo "\nKathegorie: \"${git_category}\""
 				else
 					ignore=true
-					echo "Kathegorie: \"${git_category}\" (Wird ignoriert)"
+					echo "\nKathegorie: \"${git_category}\" (Wird ignoriert)"
 				fi
 			else
 				ignore=false
-				echo "Kathegorie: \"${git_category}\""
+				echo "\nKathegorie: \"${git_category}\""
 			fi
 		else
 			github_address=$(echo ${LINE} | cut -f 1 -d " ")
@@ -66,8 +75,16 @@ ignore=true
 			else
 				if [ ! -d "${target_path}" ]
 				then
-					echo "  ==> ${github_address}${git_branch} -> ${target_path} (Klone Repository)"
-					git clone ${github_address} $(echo "${target_path}" | sed "s#^~#${HOME}#")
+					if [ -d $(echo "${target_path}" | sed "s#^~#${HOME}#") ]
+					then
+						echo "  ==> ${github_address}${git_branch} -> ${target_path} (Pull Repository)"
+						git push 2>&1 | intend
+						git pull 2>&1 | intend
+					else
+						echo "  ==> ${github_address}${git_branch} -> ${target_path} (Klone Repository)"
+						git clone ${github_address} $(echo "${target_path}" | sed "s#^~#${HOME}#") 2>&1 | intend
+					fi
+
 					# git clone ${github_address}${git_branch} $(echo "${target_path}" | sed "s#^~#${HOME}#")
 				else
 					echo "  ==> ${github_address}${git_branch} -> ${target_path} (Repository bereits Vorhanden)"
