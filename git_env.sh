@@ -34,7 +34,8 @@ then
 	echo "  ==> Getting settings from Github (${git_settings_repo})"
 	git clone ${git_settings_repo} ${default_config_dir}/git_list.d 2>&1 | intend
 else
-	echo "  ==> Aktialize settings from Github (${git_settings_repo})"
+	echo "  ==> Actualize settings from Github (${git_settings_repo})"
+	git -C ${default_config_dir}/git_list.d push 2>&1 | intend
 	git -C ${default_config_dir}/git_list.d pull 2>&1 | intend
 fi
 
@@ -62,8 +63,9 @@ ignore=true
 				echo "\nKathegorie: \"${git_category}\""
 			fi
 		else
-			github_address=$(echo ${LINE} | cut -f 1 -d " ")
-			target_path=$(echo ${LINE} | cut -f 2 -d " ")
+			git_branch=[]
+			github_address="$(echo ${LINE} | cut -f 1 -d " ")"
+			target_path="$(echo ${LINE} | cut -f 2 -d " ")"
 			git_branch="$(echo ${LINE} | cut -f 3 -d " ")"
 			if [ "${git_branch}" != "" ]
 			then
@@ -78,8 +80,8 @@ ignore=true
 					if [ -d $(echo "${target_path}" | sed "s#^~#${HOME}#") ]
 					then
 						echo "  ==> ${github_address}${git_branch} -> ${target_path} (Pull Repository)"
-						git push 2>&1 | intend
-						git pull 2>&1 | intend
+						git -C $(echo "${target_path}" | sed "s#^~#${HOME}#") push 2>&1 | intend
+						git -C $(echo "${target_path}" | sed "s#^~#${HOME}#") pull 2>&1 | intend
 					else
 						echo "  ==> ${github_address}${git_branch} -> ${target_path} (Klone Repository)"
 						git clone ${github_address} $(echo "${target_path}" | sed "s#^~#${HOME}#") 2>&1 | intend
