@@ -34,9 +34,20 @@ then
 	echo "  ==> Getting settings from Github (${git_settings_repo})"
 	git clone ${git_settings_repo} ${default_config_dir}/git_list.d 2>&1 | intend
 else
-	echo "  ==> Actualize settings from Github (${git_settings_repo})"
-	git -C ${default_config_dir}/git_list.d push 2>&1 | intend
-	git -C ${default_config_dir}/git_list.d pull 2>&1 | intend
+	if [ -d ${default_config_dir}/git_list.d/.git -a -f ${default_config_dir}/git_list.d/.git/FETCH_HEAD ]
+	then
+		if [ $(stat -c %Y ${default_config_dir}/git_list.d/.git/FETCH_HEAD) -ge $(expr $(date "+%s") + 600) ]
+		then
+			echo "  ==> Actualize settings from Github (${git_settings_repo})"
+			git -C ${default_config_dir}/git_list.d push 2>&1 | intend
+			git -C ${default_config_dir}/git_list.d pull 2>&1 | intend
+			touch ${default_config_dir}/git_list.d/.git/FETCH_HEAD
+		else
+			echo "  ==> Last pull least 10 Min ago Github (${git_settings_repo})"
+		fi
+	else
+		echo "  ==> [Error]: ${default_config_dir}/git_list.d seems to be no git repository for ${git_settings_repo}"
+	fi
 fi
 
 # find ${default_config_dir}/git_list.d/ -type f -name *.list | while read filename;
