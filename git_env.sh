@@ -37,7 +37,7 @@ then
 else
 	if [ -d ${default_config_dir}/git_list.d/.git -a -f ${default_config_dir}/git_list.d/.git/FETCH_HEAD ]
 	then
-		if [ $(stat -c %Y ${default_config_dir}/git_list.d/.git/FETCH_HEAD) -ge $(expr $(date "+%s") + 600) ]
+		if [ $(expr $(date "+%s") - 600) -gt $(stat -c %Y ${default_config_dir}/git_list.d/.git/FETCH_HEAD) ]
 		then
 			echo "  ==> Actualize settings from Github (${git_settings_repo})"
 			git -C ${default_config_dir}/git_list.d push 2>&1 | intend
@@ -46,6 +46,7 @@ else
 		else
 			echo "  ==> Last pull least 10 Min ago Github (${git_settings_repo})"
 		fi
+		exit
 	else
 		echo "  ==> [Error]: ${default_config_dir}/git_list.d seems to be no git repository for ${git_settings_repo}"
 	fi
