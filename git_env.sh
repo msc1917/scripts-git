@@ -46,7 +46,6 @@ else
 		else
 			echo "  ==> Last pull least 10 Min ago Github (${git_settings_repo})"
 		fi
-		exit
 	else
 		echo "  ==> [Error]: ${default_config_dir}/git_list.d seems to be no git repository for ${git_settings_repo}"
 	fi
