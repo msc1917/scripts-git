@@ -60,9 +60,18 @@ ignore=true
 		if echo ${LINE} | grep -q "^ *\[[^]][^]]*\].*"
 		then
 			git_category="$(echo "${LINE}" | sed "s/^ *\[\([^]][^]]*\)\].*$/\1/g")"
-			if [ "${1}" != "" ]
+			if [ "${#}" -gt 0 ]
 			then
-				if echo "${git_category}" |grep -q ${1}
+				line_in_parameters=false
+				for item in ${*}
+				do
+					# echo "${git_category} ${item}"
+					if echo "${git_category}" |grep -q ${item}
+					then
+						line_in_parameters=true
+					fi
+				done
+				if ${line_in_parameters}
 				then
 					ignore=false
 					echo "\nKathegorie: \"${git_category}\""
